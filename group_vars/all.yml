@@ -20,18 +20,14 @@ certbot:
 
 snmp:
   readonly:
-    cacd61613785a:
+    ro_comm_string:
       access:
-        - 10.40.1.243
-    6ec3b6f25366c45618866:
+        - 192.168.1.250
+    ro_comm_string2:
       access:
-        - 10.40.1.243
-      nutanix:
-        access:
-          - 10.140.1.214
-          - 10.140.1.21
-  contact: Eis-y-alerts@erickson.is
-  location: '[45.4844912361,-122.7941673249]'
+        - 192.168.1.250
+  contact: node-alerts@ashbyte.com
+  location: '[45.484,-122.794]'
 
 chrony_commands:
   allow:
@@ -51,6 +47,6 @@ dnf_automatic: true
 ## "yes" or "no"
 dnf_apply_updates: yes
 
-dnf_email_from: "eis@{{ ansible_fqdn }}"
-dnf_email_to: eis-y-alerts@erickson.is
-dnf_email_host: smtp.erickson.is
+dnf_email_from: "node_alert@{{ ansible_fqdn }}"
+dnf_email_to: node-alerts@ashbyte.com
+dnf_email_host: smtp-foward.ashbyte.com
