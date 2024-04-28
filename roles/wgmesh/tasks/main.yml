@@ -20,8 +20,6 @@
     setype: usr_t
   loop:
     - "{{ wg_path }}"
-    - "{{ shorewall_template }}"
-    - "{{ shorewall_deploy }}"
   tags:
     - wireguard
 

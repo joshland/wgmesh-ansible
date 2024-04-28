@@ -1,7 +1,2 @@
-[mesh:vars]
-ansible_sudo_pass="{{ sudo_password }}"
-
 [mesh]
-x249-vpn-clean.erickson.is
-x1439-vpn-grunt.erickson.is
-x4900-vpn-flush.erickson.is
+127.0.0.1
