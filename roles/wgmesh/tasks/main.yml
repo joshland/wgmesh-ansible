@@ -1,0 +1,189 @@
+---
+- name: Install common packages
+  yum:
+    name: "{{ wireguard_packages }}"
+    state: present
+    disable_gpg_check: yes
+  when: (ansible_distribution == "Fedora")
+  tags:
+    - wireguard
+
+- name: deploy directories
+  file:
+    path:  "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0750'
+    seuser: system_u
+    serole: object_r
+    setype: usr_t
+  loop:
+    - "{{ wg_path }}"
+    - "{{ shorewall_template }}"
+    - "{{ shorewall_deploy }}"
+  tags:
+    - wireguard
+
+- name: KeyCheck Dir
+  stat:
+    path: '{{ wg_path }}'
+  register: wg_dir_check
+  tags:
+    - wireguard
+
+- name: KeyCheck Priv
+  stat:
+    path: '{{ wg_path }}/{{ wg_privatekey }}'
+  register: wg_priv_check
+  tags:
+    - wireguard
+
+- name: KeyCheck Pub
+  stat:
+    path: '{{ wg_path }}/{{ wg_publickey }}'
+  register: wg_pub_check
+  tags:
+    - wireguard
+
+- name: Create Private Key
+  shell: |
+    set -o pipefail
+    PRIVKEY="{{ wg_path }}/{{ wg_privatekey }}"
+    wg genkey | tee ${PRIVKEY} > /dev/null
+    chown root:root ${PRIVKEY}
+    chmod 400 ${PRIVKEY}
+  ignore_errors: yes
+  when: not wg_priv_check.stat.exists
+  tags:
+    - wireguard
+
+- name: Create Private Key
+  shell: |
+    set -o pipefail
+    PRIVKEY="{{ wg_path }}/{{ wg_privatekey }}"
+    PUBKEY="{{ wg_path }}/{{ wg_publickey }}"
+
+    cat ${PRIVKEY} | wg pubkey | tee ${PUBKEY} > /dev/null
+    chown root:root ${PUBKEY}
+    chmod 400 ${PUBKEY}
+  ignore_errors: yes
+  when: not wg_pub_check.stat.exists
+  tags:
+    - wireguard
+
+- name: backup directories
+  file:
+    path:  "{{ item }}"
+    state: directory
+    owner: eis
+    group: eis
+    mode: '0750'
+  loop:
+    - /home/eis/_backup
+    - /home/eis/_backup/wg
+    - /home/eis/_backup/shorewall
+    - /home/eis/_backup/network
+  tags:
+    - wireguard
+
+- name: backup script
+  template:
+    src: backup.sh.j2
+    dest:  /home/eis/_backup/backup.sh
+    owner: eis
+    group: eis
+    mode: '0750'
+    force: no
+  tags:
+    - wireguard
+
+- name: wg-kickstart startup script
+  template:
+    src: "wg-kickstart.sh"
+    dest: "/usr/local/bin/wg-kickstart.sh"
+    mode: '0755'
+    owner: root
+    group: root
+    seuser: system_u
+    serole: object_r
+    setype: bin_t
+  tags:
+    - wireguard
+    - systemd
+
+- name: write wg-kickstart systemd service
+  template:
+    src: "wg-kickstart.service"
+    dest: "/usr/lib/systemd/system/wg-kickstart.service"
+    mode: '0755'
+    owner: root
+    group: root
+    seuser: system_u
+    serole: object_r
+    setype: systemd_unit_file_t
+  tags:
+    - wireguard
+    - systemd
+
+- name: write wireguard systemd service
+  template:
+    src: "wireguard.service"
+    dest: "/usr/lib/systemd/system/wireguard.service"
+    mode: '0755'
+    owner: root
+    group: root
+    seuser: system_u
+    serole: object_r
+    setype: systemd_unit_file_t
+  tags:
+    - wireguard
+    - config_rewrite
+
+- name: disable firewalld
+  systemd:
+    name: firewalld
+    enabled: no
+    masked: yes
+    daemon-reload: True
+  tags:
+    - wireguard
+    - systemctl
+
+- name: enable wireguard kickstart service
+  systemd:
+    name: "{{ item }}"
+    enabled: yes
+    daemon-reload: True
+  loop:
+    - shorewall
+    - wg-kickstart.service
+    - wg-quick@wg0.service
+  tags:
+    - wireguard
+    - systemctl
+
+- name: Deploy stock shorewall configuration
+  unarchive:
+    src: eis-shorewall.tar.xz
+    dest: /usr/share/doc/eis/
+    seuser: system_u
+    serole: object_r
+    setype: shorewall_etc_t
+  tags:
+    - wireguard
+    - shorewall
+
+- set_fact:
+    rsync_dry_run: "--dry-run"
+  when: ansible_check_mode
+
+- name: copy files within target host
+  shell: "rsync -u --itemize-changes --archive --acls --xattrs {{ rsync_dry_run | default('') }} {{ shorewall_template }}/shorewall/* {{ shorewall_deploy }}/"
+  check_mode: no
+  register: rsync_result
+  changed_when: rsync_result.stdout != ''
+  tags:
+    - wireguard
+    - shorewall
+

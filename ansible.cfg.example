@@ -1,0 +1,22 @@
+[defaults]
+inventory = ./hosts
+hostfile=./hosts
+library = /usr/share/ansible
+# only use in lab settings. Reference:
+# http://docs.ansible.com/intro_getting_started.html#host-key-checking
+host_key_checking=False
+forks = 50
+internal_poll_interval = 0.001
+## Stop getting hardware, this is slow and we're not using it.
+gather_subset=!hardware
+
+gathering = smart
+fact_caching_connection = tmp/facts_cache
+fact_caching = jsonfile
+# The timeout is defined in seconds 
+# This is 2 hours 
+fact_caching_timeout = 7200
+
+[ssh_connection]
+ssh_args = -o ControlMaster=auto -o ControlPersist=600s
+pipelining = true

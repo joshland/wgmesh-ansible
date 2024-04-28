@@ -1,0 +1,3 @@
+---
+ansible_sudo_pass: "{{ sudo_vpn }}"
+vpn_group_included: yes

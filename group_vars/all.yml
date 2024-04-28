@@ -1,0 +1,56 @@
+---
+# Variables for this exercise
+ansible_python_interpreter: /usr/bin/python3
+
+## certbot: enable cockpit changes
+enable_cockpit: yes
+
+redhat:
+  - git
+  - net-snmp
+
+fedora:
+  - git
+  - net-snmp
+  - python-unversioned-command
+
+certbot:
+  acme_email: security@erickson.is
+  domains: "{{ ansible_fqdn }}"
+
+snmp:
+  readonly:
+    cacd61613785a:
+      access:
+        - 10.40.1.243
+    6ec3b6f25366c45618866:
+      access:
+        - 10.40.1.243
+      nutanix:
+        access:
+          - 10.140.1.214
+          - 10.140.1.21
+  contact: Eis-y-alerts@erickson.is
+  location: '[45.4844912361,-122.7941673249]'
+
+chrony_commands:
+  allow:
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+  hwtimestamp: '*'
+  keyfile: /etc/chrony.keys
+  log: 'measurements statistics tracking'
+  driftfile: /var/lib/chrony/drift
+  logdir: /var/log/chrony
+  makestep: '1.0 3'
+  minsources: 2
+  rtcsync: True
+
+dnf_automatic: true
+
+## "yes" or "no"
+dnf_apply_updates: yes
+
+dnf_email_from: "eis@{{ ansible_fqdn }}"
+dnf_email_to: eis-y-alerts@erickson.is
+dnf_email_host: smtp.erickson.is

@@ -1,0 +1,5 @@
+---
+wg_path: /etc/wireguard
+wg_privatekey: privatekey
+wg_publickey: publickey
+

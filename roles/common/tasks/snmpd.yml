@@ -1,0 +1,53 @@
+---
+- name: Install SNMP on Redhat Systems.
+  yum:
+    name:
+      - net-snmp-utils
+      - net-snmp
+    state: present
+
+- name: write snmpd.conf configuration
+  template:
+    src: snmpd.conf.j2
+    dest: /etc/snmp/snmpd.conf
+    mode: '0644'
+    owner: root
+    group: root
+    seuser: system_u
+    serole: object_r
+    setype: etc_t
+  notify:
+    - restart snmpd
+  tags:
+    - configuration
+    - snmpd
+    - snmpd-start-enable-service
+
+- name: write observium distro shell script
+  copy:
+    src: "{{ item }}"
+    dest: "/usr/local/bin/{{ item }}"
+    mode: '0755'
+    owner: root
+    group: root
+    seuser: system_u
+    serole: object_r
+    setype: bin_t
+  loop:
+    - distro
+  tags:
+    - configuration
+    - snmpd
+    - snmpd-start-enable-service
+
+- name: start and enable service
+  service:
+    name: snmpd
+    state: "{{ service_default_state | default('started') }}"
+    enabled: "{{ service_default_enabled | default(true) | bool }}"
+  tags:
+    - configuration
+    - snmpd
+    - snmpd-start-enable-service
+
+

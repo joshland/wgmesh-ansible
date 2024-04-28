@@ -1,0 +1,5 @@
+pip
+wheel
+ipaddr
+netaddr
+ansible<3
